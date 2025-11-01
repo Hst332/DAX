@@ -27,7 +27,7 @@ jobs:
           pip install yfinance pandas numpy ta
 
       - name: Forecast ausführen
-        run: python dax_trend_forecast1.py
+        run: python dax_trend_forecast.py
 
       - name: Änderungen committen & pushen
         env:
