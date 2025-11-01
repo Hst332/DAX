@@ -27,7 +27,7 @@ jobs:
           pip install yfinance pandas numpy ta
 
       - name: Forecast ausführen
-        run: python dax_trend_forecast1.py
+        run: python dax_trend_forecast.py
 
       - name: Änderungen committen & pushen
         env:
@@ -38,4 +38,3 @@ jobs:
           git add result.txt
           git commit -m "📊 Tägliche DAX-Prognose aktualisiert" || echo "Keine Änderungen"
           git push https://$GH_PAT@github.com/${{ github.repository }} HEAD:main
-
