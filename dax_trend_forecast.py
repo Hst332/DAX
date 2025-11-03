@@ -13,7 +13,7 @@ import ta
 SYMBOL = "^GDAXI"
 ALT_SYMBOL = "EXS1.DE"
 ATR_PERIOD = 14
-CHAIN_MAX = 14
+CHAIN_MAX = 30  # Anzahl Tage für Trendstreak
 
 END = datetime.now()
 START = END - timedelta(days=3*365)
@@ -69,15 +69,29 @@ def calculate_prediction(df):
     close = df["Close"]
     df["rsi"] = ta.momentum.RSIIndicator(close, window=14).rsi()
     df["sma50"] = close.rolling(50).mean()
+
     last_close = close.iloc[-1]
+    last_sma = df["sma50"].iloc[-1]
     last_rsi = df["rsi"].iloc[-1] if not np.isnan(df["rsi"].iloc[-1]) else 50
-    if last_close > df["sma50"].iloc[-1]:
+
+    # Basiswahrscheinlichkeit
+    prob = 50
+
+    # SMA-Trend einfließen lassen
+    if last_close > last_sma:
         trend = "Steigend"
-        prob = 55 + (last_rsi - 50)/2
+        prob += 10  # leicht bullish
     else:
         trend = "Fallend"
-        prob = 55 + (50 - last_rsi)/2
-    return trend, max(0, min(100, prob))
+        prob -= 10  # leicht bearish
+
+    # RSI einfließen lassen
+    prob += (last_rsi - 50)/2
+
+    # Begrenzung auf 0-100%
+    prob = max(0, min(100, prob))
+
+    return trend, round(prob,2)
 
 trend, prob = calculate_prediction(df)
 last_close = df["Close"].iloc[-1]
@@ -85,8 +99,8 @@ last_close = df["Close"].iloc[-1]
 # ----------------------------------------------------------
 # 📅 Aktuelle Trendserie
 # ----------------------------------------------------------
-def get_streak(df):
-    recent_returns = df["Return"].tail(30).values
+def get_streak(df, days=30):
+    recent_returns = df["Return"].tail(days).values
     up = recent_returns[-1] > 0
     streak = 1
     for r in reversed(recent_returns[:-1]):
@@ -97,7 +111,7 @@ def get_streak(df):
     direction = "gestiegen 📈" if up else "gefallen 📉"
     return direction, streak
 
-direction, streak = get_streak(df)
+direction, streak = get_streak(df, CHAIN_MAX)
 
 # ----------------------------------------------------------
 # 📈 Ergebnis ausgeben & Datei speichern
@@ -106,7 +120,7 @@ msg = (
     f"📅 {datetime.now():%d.%m.%Y %H:%M}\n"
     f"📈 DAX: {round(last_close,2)} €\n"
     f"🔮 Trend: {trend}\n"
-    f"📊 Wahrscheinlichkeit: {round(prob,2)} %\n"
+    f"📊 Wahrscheinlichkeit: {prob} %\n"
     f"📏 Aktueller Trend: DAX ist {streak} Tage in Folge {direction}\n"
     f"ℹ️ Automatische tägliche Prognose"
 )
