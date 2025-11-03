@@ -1,6 +1,6 @@
-📅 03.11.2025 12:18
+📅 03.11.2025 12:43
 📈 DAX: 23958.3 €
 🔮 Trend: Fallend 📉
-📊 Wahrscheinlichkeit: 49.84 %
-🎯 Trefferquote (letzte 400 Tage): 54.75 %
-ℹ️ Modellgewichte → SMA=10, RSI=0.8, ATR=6, Streak=1.5
+📊 Wahrscheinlichkeit: 40.99 %
+🎯 Optimierte Trefferquote (letzte 400 Tage): 69.84 %
+⚙️ Beste Parameter → SMA=20/50, WSMA=8, RSI=0.8, ATR=4, Streak=1.5
