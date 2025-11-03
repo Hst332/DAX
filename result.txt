@@ -1,7 +1,9 @@
-📅 03.11.2025 14:14
-📈 DAX: 23958.3 €
+📅 03.11.2025 14:35
+📈 DAX: Ticker
+^GDAXI    23958.3
+Name: 762, dtype: float64 €
 🔮 Trend: Fallend 📉
-📊 Wahrscheinlichkeit steigend: 40.99 %
-📊 Wahrscheinlichkeit fallend: 59.01 %
+📊 Wahrscheinlichkeit steigend: 47.84 %
+📊 Wahrscheinlichkeit fallend : 52.16 %
 🎯 Optimierte Trefferquote (letzte 400 Tage): 69.84 %
 ⚙️ Beste Parameter → SMA=20/50, WSMA=8, RSI=0.8, ATR=4, Streak=1.5
