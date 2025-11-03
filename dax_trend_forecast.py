@@ -29,7 +29,7 @@ def load_data(ticker):
     df = yf.download(ticker, start=START, end=END, progress=False, auto_adjust=True)
     if df.empty:
         raise ValueError(f"Keine Daten für {ticker}")
-    for col in ["Open","High","Low","Close"]:
+    for col in ["Open", "High", "Low", "Close"]:
         if col not in df.columns:
             df[col] = df["Close"]
     df = df.reset_index()
@@ -70,9 +70,9 @@ df = compute_atr(df, ATR_PERIOD)
 def calculate_prediction(df_slice):
     close = df_slice["Close"].squeeze()
 
-    df_slice["rsi"] = ta.momentum.RSIIndicator(close, window=RSI_PERIOD).rsi()
-    df_slice["sma_short"] = close.rolling(SMA_SHORT).mean()
-    df_slice["sma_long"] = close.rolling(SMA_LONG).mean()
+    df_slice.loc[:, "rsi"] = ta.momentum.RSIIndicator(close, window=RSI_PERIOD).rsi()
+    df_slice.loc[:, "sma_short"] = close.rolling(SMA_SHORT).mean()
+    df_slice.loc[:, "sma_long"] = close.rolling(SMA_LONG).mean()
 
     last_sma_short = df_slice["sma_short"].iloc[-1]
     last_sma_long = df_slice["sma_long"].iloc[-1]
@@ -83,29 +83,31 @@ def calculate_prediction(df_slice):
     # Baseline
     prob = 50
 
-    # 🟩 SMA-Trend (mittelfristig): stärker gewichten
+    # 🟩 SMA-Trend (mittelfristig)
     if last_sma_short > last_sma_long:
         prob += 15
     else:
         prob -= 15
 
     # 🟦 RSI (kurzfristiges Momentum)
-    prob += (last_rsi - 50) * 0.6  # vorher 0.5 → feinfühliger
+    prob += (last_rsi - 50) * 0.6
 
     # 🟨 ATR-bezogene Bewegung (Volatilität)
     if last_atr > 0:
         prob += np.tanh((daily_move / last_atr) * 2) * 8  # begrenzt auf ±8 %
 
     # 🟥 Trendserie (Markov-artig)
-    recent_returns = df_slice["Return"].tail(CHAIN_MAX)
+    recent_returns = list(df_slice["Return"].tail(CHAIN_MAX))  # als Liste!
     up_streak = 0
     down_streak = 0
     for r in reversed(recent_returns):
         if r > 0:
-            if down_streak > 0: break
+            if down_streak > 0:
+                break
             up_streak += 1
         elif r < 0:
-            if up_streak > 0: break
+            if up_streak > 0:
+                break
             down_streak += 1
         else:
             break
@@ -122,8 +124,8 @@ def calculate_prediction(df_slice):
 correct = 0
 total = 0
 
-for i in range(len(df)-LAST_DAYS, len(df)):
-    df_slice = df.iloc[:i+1]
+for i in range(len(df) - LAST_DAYS, len(df)):
+    df_slice = df.iloc[:i+1].copy()
     prob = calculate_prediction(df_slice)
 
     current_return = df["Return"].iloc[i]
