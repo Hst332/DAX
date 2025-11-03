@@ -6,7 +6,6 @@ import pandas as pd
 import numpy as np
 from datetime import datetime, timedelta
 import ta
-import matplotlib.pyplot as plt
 
 # ----------------------------------------------------------
 # ⚙️ Parameter
@@ -178,15 +177,3 @@ with open("result.txt", "w", encoding="utf-8") as f:
     f.write(msg)
 print("📁 Ergebnis in result.txt gespeichert ✅")
 
-# ----------------------------------------------------------
-# 🔹 Rollierende Trefferquote visualisieren
-# ----------------------------------------------------------
-plt.figure(figsize=(10,5))
-plt.plot(df.index[-len(rolling_acc):], rolling_acc, label=f'Rollierende {ROLL_WINDOW}-Tage Trefferquote')
-plt.axhline(y=OPT_HISTORICAL_ACCURACY, color='red', linestyle='--', label='Optimierte Trefferquote')
-plt.title('Rollierende Trefferquote des DAX-Modells')
-plt.xlabel('Datum')
-plt.ylabel('Trefferquote (%)')
-plt.legend()
-plt.tight_layout()
-plt.show()
