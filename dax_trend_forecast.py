@@ -17,7 +17,7 @@ RSI_PERIOD = 7
 SMA_SHORT = 10
 SMA_LONG = 50
 CHAIN_MAX = 30
-LAST_DAYS = 200  # Anzahl der Tage für Trefferquote
+LAST_DAYS = 400  # ⬅️ jetzt 400 Tage
 
 END = datetime.now()
 START = END - timedelta(days=3*365)
@@ -58,17 +58,16 @@ def compute_atr(df, period=ATR_PERIOD):
     tr2 = (high - close.shift(1)).abs()
     tr3 = (low - close.shift(1)).abs()
     tr = pd.concat([tr1, tr2, tr3], axis=1).max(axis=1)
-    atr = tr.rolling(period).mean().bfill()  # ⚡ zukunftssicher
+    atr = tr.rolling(period).mean().bfill()
     df["ATR"] = atr
     return df
 
 df = compute_atr(df, ATR_PERIOD)
 
 # ----------------------------------------------------------
-# 🔮 Vorhersagefunktion
+# 🔮 Vorhersagefunktion (mit optimierten Gewichtungen)
 # ----------------------------------------------------------
 def calculate_prediction(df_slice):
-    # ⚡ Close als 1D-Series erzwingen
     close = df_slice["Close"].squeeze()
 
     df_slice["rsi"] = ta.momentum.RSIIndicator(close, window=RSI_PERIOD).rsi()
@@ -81,31 +80,39 @@ def calculate_prediction(df_slice):
     last_atr = df_slice["ATR"].iloc[-1]
     daily_move = df_slice["Return"].iloc[-1]
 
-    # Basiswahrscheinlichkeit
+    # Baseline
     prob = 50
 
-    # SMA-Trend
+    # 🟩 SMA-Trend (mittelfristig): stärker gewichten
     if last_sma_short > last_sma_long:
-        prob += 10
+        prob += 15
     else:
-        prob -= 10
+        prob -= 15
 
-    # Momentum (RSI)
-    prob += (last_rsi - 50)/2
+    # 🟦 RSI (kurzfristiges Momentum)
+    prob += (last_rsi - 50) * 0.6  # vorher 0.5 → feinfühliger
 
-    # Tagesbewegung relativ zur ATR
-    prob += (daily_move / last_atr) * 10
+    # 🟨 ATR-bezogene Bewegung (Volatilität)
+    if last_atr > 0:
+        prob += np.tanh((daily_move / last_atr) * 2) * 8  # begrenzt auf ±8 %
 
-    # Trendserie (Markov-Prinzip)
+    # 🟥 Trendserie (Markov-artig)
     recent_returns = df_slice["Return"].tail(CHAIN_MAX)
-    streak_up = (recent_returns > 0).cumprod().sum()
-    streak_down = (recent_returns < 0).cumprod().sum()
-    if streak_up > streak_down:
-        prob += min(streak_up, 5)
-    elif streak_down > streak_up:
-        prob -= min(streak_down, 5)
+    up_streak = 0
+    down_streak = 0
+    for r in reversed(recent_returns):
+        if r > 0:
+            if down_streak > 0: break
+            up_streak += 1
+        elif r < 0:
+            if up_streak > 0: break
+            down_streak += 1
+        else:
+            break
+    prob += up_streak * 1.2
+    prob -= down_streak * 1.2
 
-    # Begrenzung
+    # Grenzen
     prob = max(0, min(100, prob))
     return prob
 
