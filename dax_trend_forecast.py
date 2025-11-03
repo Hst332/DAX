@@ -57,7 +57,7 @@ def compute_atr(df, period=14):
     tr2 = (high - close.shift(1)).abs()
     tr3 = (low - close.shift(1)).abs()
     tr = pd.concat([tr1, tr2, tr3], axis=1).max(axis=1)
-    atr = tr.rolling(period).mean().fillna(method="bfill")
+    atr = tr.rolling(period).mean().bfill()  # ⚡ bfill statt deprecated fillna(method="bfill")
     df["ATR"] = atr
     return df
 
@@ -67,32 +67,32 @@ df = compute_atr(df, ATR_PERIOD)
 # 🔮 Vorhersagefunktion
 # ----------------------------------------------------------
 def calculate_prediction(df_slice):
-    # ⚡ WICHTIG: Close als Series
-    close = df_slice["Close"]
+    # ⚡ Close als 1D-Series erzwingen
+    close = df_slice["Close"].squeeze()
 
     df_slice["rsi"] = ta.momentum.RSIIndicator(close, window=RSI_PERIOD).rsi()
     df_slice["sma_short"] = close.rolling(SMA_SHORT).mean()
     df_slice["sma_long"] = close.rolling(SMA_LONG).mean()
 
-    last_close = close.iloc[-1]
     last_sma_short = df_slice["sma_short"].iloc[-1]
     last_sma_long = df_slice["sma_long"].iloc[-1]
     last_rsi = df_slice["rsi"].iloc[-1] if not np.isnan(df_slice["rsi"].iloc[-1]) else 50
     last_atr = df_slice["ATR"].iloc[-1]
+    daily_move = df_slice["Return"].iloc[-1]
 
+    # Basiswahrscheinlichkeit
     prob = 50
 
-    # Trend
+    # SMA-Trend
     if last_sma_short > last_sma_long:
         prob += 10
     else:
         prob -= 10
 
-    # Momentum
+    # Momentum (RSI)
     prob += (last_rsi - 50)/2
 
     # Tagesbewegung relativ zur ATR
-    daily_move = df_slice["Return"].iloc[-1]
     prob += (daily_move / last_atr) * 10
 
     # Trendserie (Markov-Prinzip)
@@ -100,10 +100,11 @@ def calculate_prediction(df_slice):
     streak_up = (recent_returns > 0).cumprod().sum()
     streak_down = (recent_returns < 0).cumprod().sum()
     if streak_up > streak_down:
-        prob += min(streak_up,5)
+        prob += min(streak_up, 5)
     elif streak_down > streak_up:
-        prob -= min(streak_down,5)
+        prob -= min(streak_down, 5)
 
+    # Begrenzung
     prob = max(0, min(100, prob))
     return prob
 
