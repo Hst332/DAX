@@ -74,7 +74,10 @@ df = compute_atr(df, ATR_PERIOD)
 # 🔮 Prognoseberechnung
 # ----------------------------------------------------------
 def calculate_prediction(df, w_sma, w_rsi, w_atr, w_streak, sma_short, sma_long):
-    close = df["Close"].squeeze()
+    if len(df) < sma_long:  # Minimum prüfen
+        return 50  # neutrale Wahrscheinlichkeit
+
+    close = df["Close"]  # pandas.Series bleibt erhalten
     df["sma_short"] = close.rolling(sma_short).mean()
     df["sma_long"] = close.rolling(sma_long).mean()
     df["rsi"] = ta.momentum.RSIIndicator(close, window=RSI_PERIOD).rsi()
@@ -131,7 +134,7 @@ def get_streak(df):
     return direction, streak
 
 # ----------------------------------------------------------
-# 🔹 Rollierende Trefferquote
+# 🔹 Rollierende Trefferquote (optional)
 # ----------------------------------------------------------
 def rolling_accuracy(df, w_sma, w_rsi, w_atr, w_streak, sma_short, sma_long, window=ROLL_WINDOW):
     acc_list = []
@@ -176,4 +179,3 @@ print(msg)
 with open("result.txt", "w", encoding="utf-8") as f:
     f.write(msg)
 print("📁 Ergebnis in result.txt gespeichert ✅")
-
