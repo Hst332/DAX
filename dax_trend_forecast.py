@@ -6,6 +6,7 @@ import pandas as pd
 import numpy as np
 from datetime import datetime, timedelta
 import ta
+import matplotlib.pyplot as plt
 
 # ----------------------------------------------------------
 # ⚙️ Parameter
@@ -18,13 +19,14 @@ SMA_SHORT = 20
 SMA_LONG = 50
 LAST_DAYS = 400
 CHAIN_MAX = 14
+ROLL_WINDOW = 30  # Rollierende Trefferquote
 
 # Beste gefundene Parameter (fest)
 W_SMA = 8
 W_RSI = 0.8
 W_ATR = 4
 W_STREAK = 1.5
-OPT_HISTORICAL_ACCURACY = 69.84  # Optimierte Trefferquote aus Backtest
+OPT_HISTORICAL_ACCURACY = 69.84  # Optimierte Trefferquote
 
 END = datetime.now()
 START = END - timedelta(days=3*365)
@@ -115,25 +117,76 @@ def calculate_prediction(df, w_sma, w_rsi, w_atr, w_streak, sma_short, sma_long)
     return prob
 
 # ----------------------------------------------------------
-# 📈 Aktuelle Prognose
+# 🔹 Aktuelle Trendserie
+# ----------------------------------------------------------
+def get_streak(df):
+    recent_returns = df["Return"].tail(30).values
+    up = recent_returns[-1] > 0
+    streak = 1
+    for r in reversed(recent_returns[:-1]):
+        if (r > 0 and up) or (r < 0 and not up):
+            streak += 1
+        else:
+            break
+    direction = "gestiegen 📈" if up else "gefallen 📉"
+    return direction, streak
+
+# ----------------------------------------------------------
+# 🔹 Rollierende Trefferquote
+# ----------------------------------------------------------
+def rolling_accuracy(df, w_sma, w_rsi, w_atr, w_streak, sma_short, sma_long, window=ROLL_WINDOW):
+    acc_list = []
+    for i in range(window, len(df)):
+        correct = 0
+        for j in range(i-window, i):
+            df_slice = df.iloc[:j+1].copy()
+            prob = calculate_prediction(df_slice, w_sma, w_rsi, w_atr, w_streak, sma_short, sma_long)
+            predicted_up = prob >= 50
+            actual_up = df["Return"].iloc[j] > 0
+            if predicted_up == actual_up:
+                correct += 1
+        acc_list.append(correct / window * 100)
+    return acc_list
+
+# ----------------------------------------------------------
+# 🔹 Berechnungen
 # ----------------------------------------------------------
 trend_prob = calculate_prediction(df, W_SMA, W_RSI, W_ATR, W_STREAK, SMA_SHORT, SMA_LONG)
 trend = "Steigend 📈" if trend_prob >= 50 else "Fallend 📉"
 last_close = df["Close"].iloc[-1]
 
+streak_direction, streak_length = get_streak(df)
+rolling_acc = rolling_accuracy(df, W_SMA, W_RSI, W_ATR, W_STREAK, SMA_SHORT, SMA_LONG)
+
+# ----------------------------------------------------------
+# 📊 Ergebnis ausgeben & speichern
+# ----------------------------------------------------------
 msg = (
     f"📅 {datetime.now():%d.%m.%Y %H:%M}\n"
     f"📈 DAX: {round(last_close,2)} €\n"
     f"🔮 Trend: {trend}\n"
     f"📊 Wahrscheinlichkeit steigend: {round(trend_prob,2)} %\n"
     f"📊 Wahrscheinlichkeit fallend : {round(100-trend_prob,2)} %\n"
+    f"📏 Aktueller Trend: DAX ist {streak_length} Tage in Folge {streak_direction}\n"
     f"🎯 Optimierte Trefferquote (letzte {LAST_DAYS} Tage): {OPT_HISTORICAL_ACCURACY} %\n"
     f"⚙️ Beste Parameter → SMA={SMA_SHORT}/{SMA_LONG}, WSMA={W_SMA}, RSI={W_RSI}, ATR={W_ATR}, Streak={W_STREAK}"
 )
 
 print(msg)
 
-# Datei speichern (überschreibt täglich)
 with open("result.txt", "w", encoding="utf-8") as f:
     f.write(msg)
 print("📁 Ergebnis in result.txt gespeichert ✅")
+
+# ----------------------------------------------------------
+# 🔹 Rollierende Trefferquote visualisieren
+# ----------------------------------------------------------
+plt.figure(figsize=(10,5))
+plt.plot(df.index[-len(rolling_acc):], rolling_acc, label=f'Rollierende {ROLL_WINDOW}-Tage Trefferquote')
+plt.axhline(y=OPT_HISTORICAL_ACCURACY, color='red', linestyle='--', label='Optimierte Trefferquote')
+plt.title('Rollierende Trefferquote des DAX-Modells')
+plt.xlabel('Datum')
+plt.ylabel('Trefferquote (%)')
+plt.legend()
+plt.tight_layout()
+plt.show()
