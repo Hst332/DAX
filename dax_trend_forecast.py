@@ -175,7 +175,8 @@ msg = (
     f"📅 {datetime.now():%d.%m.%Y %H:%M}\n"
     f"📈 DAX: {round(last_close,2)} €\n"
     f"🔮 Trend: {trend}\n"
-    f"📊 Wahrscheinlichkeit: {round(trend_prob,2)} %\n"
+    f"📊 Wahrscheinlichkeit steigend: {round(trend_prob,2)} %\n"
+    f"📊 Wahrscheinlichkeit fallend: {100-round(trend_prob,2)} %\n"
     f"🎯 Optimierte Trefferquote (letzte {LAST_DAYS} Tage): {round(best_acc,2)} %\n"
     f"⚙️ Beste Parameter → SMA={sma_short}/{sma_long}, WSMA={w_sma}, RSI={w_rsi}, ATR={w_atr}, Streak={w_streak}"
 )
