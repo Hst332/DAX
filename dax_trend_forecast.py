@@ -41,6 +41,7 @@ def load_data(ticker):
         if col not in df.columns:
             df[col] = df["Close"]
     df = df.reset_index()
+    df["Close"] = df["Close"].astype(float)  # sicherstellen 1D float
     df["Return"] = df["Close"].pct_change().fillna(0)
     return df
 
@@ -77,7 +78,7 @@ def calculate_prediction(df, w_sma, w_rsi, w_atr, w_streak, sma_short, sma_long)
     if len(df) < sma_long:  # Minimum prüfen
         return 50  # neutrale Wahrscheinlichkeit
 
-    close = df["Close"]  # pandas.Series bleibt erhalten
+    close = df["Close"].astype(float)  # 1D float Series
     df["sma_short"] = close.rolling(sma_short).mean()
     df["sma_long"] = close.rolling(sma_long).mean()
     df["rsi"] = ta.momentum.RSIIndicator(close, window=RSI_PERIOD).rsi()
