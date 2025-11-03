@@ -184,5 +184,5 @@ print(msg)
 
 # Datei speichern
 with open("result.txt", "w", encoding="utf-8") as f:
-    f.write(msg)
+    f.write(msg + "\n")
 print("📁 Ergebnis in result.txt gespeichert ✅")
