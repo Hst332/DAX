@@ -17,6 +17,7 @@ RSI_PERIOD = 7
 SMA_SHORT = 10
 SMA_LONG = 50
 CHAIN_MAX = 30
+LAST_DAYS = 200  # Anzahl der Tage für Trefferquote
 
 END = datetime.now()
 START = END - timedelta(days=3*365)
@@ -49,7 +50,7 @@ if df is None:
 # ----------------------------------------------------------
 # 📊 ATR berechnen
 # ----------------------------------------------------------
-def compute_atr(df, period=14):
+def compute_atr(df, period=ATR_PERIOD):
     high = df["High"]
     low = df["Low"]
     close = df["Close"]
@@ -57,7 +58,7 @@ def compute_atr(df, period=14):
     tr2 = (high - close.shift(1)).abs()
     tr3 = (low - close.shift(1)).abs()
     tr = pd.concat([tr1, tr2, tr3], axis=1).max(axis=1)
-    atr = tr.rolling(period).mean().bfill()  # ⚡ bfill statt deprecated fillna(method="bfill")
+    atr = tr.rolling(period).mean().bfill()  # ⚡ zukunftssicher
     df["ATR"] = atr
     return df
 
@@ -109,24 +110,22 @@ def calculate_prediction(df_slice):
     return prob
 
 # ----------------------------------------------------------
-# 📊 Backtesting
+# 📊 Trefferquote der letzten LAST_DAYS
 # ----------------------------------------------------------
 correct = 0
 total = 0
 
-# Start nach SMA_LONG, damit alle Indikatoren verfügbar sind
-for i in range(SMA_LONG, len(df)-1):
+for i in range(len(df)-LAST_DAYS, len(df)):
     df_slice = df.iloc[:i+1]
     prob = calculate_prediction(df_slice)
 
-    # Richtung des nächsten Tages
-    next_return = df["Return"].iloc[i+1]
+    current_return = df["Return"].iloc[i]
     predicted_up = prob >= 50
-    actual_up = next_return > 0
+    actual_up = current_return > 0
 
     if predicted_up == actual_up:
         correct += 1
     total += 1
 
 accuracy = correct / total * 100
-print(f"📊 Trefferquote des Modells auf historischen Daten: {accuracy:.2f} % ({correct}/{total})")
+print(f"📊 Trefferquote des Modells in den letzten {LAST_DAYS} Tagen: {accuracy:.2f} % ({correct}/{total})")
