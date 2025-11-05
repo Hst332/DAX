@@ -1,10 +1,10 @@
-📅 04.11.2025 06:52
+📅 05.11.2025 06:50
 📈 DAX: Ticker
-^GDAXI    24132.41
-Name: 762, dtype: float64 €
+^GDAXI    23949.11
+Name: 763, dtype: float64 €
 🔮 Trend: Steigend 📈
-📊 Wahrscheinlichkeit steigend: 59.47 %
-📊 Wahrscheinlichkeit fallend : 40.53 %
-📏 Aktueller Trend: DAX ist 1 Tage in Folge gestiegen 📈
+📊 Wahrscheinlichkeit steigend: 52.64 %
+📊 Wahrscheinlichkeit fallend : 47.36 %
+📏 Aktueller Trend: DAX ist 1 Tage in Folge gefallen 📉
 🎯 Optimierte Trefferquote (letzte 400 Tage): 69.84 %
 ⚙️ Beste Parameter → SMA=20/50, WSMA=8, RSI=0.8, ATR=4, Streak=1.5
