@@ -1,7 +1,7 @@
-📅 07.11.2025 18:39
+📅 10.11.2025 06:53
 📈 DAX: Ticker
 ^GDAXI    23569.96
-Name: 765, dtype: float64 €
+Name: 762, dtype: float64 €
 🔮 Trend: Fallend 📉
 📊 Wahrscheinlichkeit steigend: 45.0 %
 📊 Wahrscheinlichkeit fallend : 55.0 %
